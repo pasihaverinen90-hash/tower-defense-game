@@ -30,16 +30,16 @@ class GameScene extends Phaser.Scene {
       y: wp.y * TILE_SIZE + TILE_SIZE / 2,
     }));
 
-    // Shared render graphics (cleared every frame)
-    this.gridGfx   = this.add.graphics().setDepth(-100);
-    this.enemyGfx  = this.add.graphics().setDepth(10);
-    this.projGfx   = this.add.graphics().setDepth(11);
-    this.effectGfx = this.add.graphics().setDepth(12);
-    this.hoverGfx  = this.add.graphics().setDepth(13);
-
-    // Static grid drawn once
+    // Static layers FIRST (drawn underneath everything)
+    this.gridGfx = this.add.graphics();
     this._drawGrid();
     this._drawPathMarkers();
+
+    // Dynamic layers AFTER (drawn on top of the grid)
+    this.enemyGfx  = this.add.graphics();
+    this.projGfx   = this.add.graphics();
+    this.effectGfx = this.add.graphics();
+    this.hoverGfx  = this.add.graphics();
 
     // Input
     this.input.on('pointerdown', this._handleClick, this);
@@ -70,7 +70,6 @@ class GameScene extends Phaser.Scene {
   // ─── Static visuals ─────────────────────────────────────────────────────────
   _drawGrid() {
     const gfx = this.gridGfx;
-    gfx.clear();
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         const isPath = PATH_TILES.has(`${col},${row}`);
@@ -248,9 +247,6 @@ class GameScene extends Phaser.Scene {
   // ─── Main update loop ───────────────────────────────────────────────────────
   update(time, delta) {
     if (this.gameOver || this.gameWon) return;
-
-    // 0 ── Redraw grid (underneath everything) ──────────────────────────────────
-    this._drawGrid();
 
     // 1 ── Wave countdown / start ─────────────────────────────────────────────
     if (!this.waveActive) {
