@@ -31,10 +31,11 @@ class GameScene extends Phaser.Scene {
     }));
 
     // Shared render graphics (cleared every frame)
-    this.enemyGfx  = this.add.graphics().setDepth(100);
-    this.projGfx   = this.add.graphics().setDepth(101);
-    this.effectGfx = this.add.graphics().setDepth(102);
-    this.hoverGfx  = this.add.graphics().setDepth(103);
+    this.gridGfx   = this.add.graphics().setDepth(-100);
+    this.enemyGfx  = this.add.graphics().setDepth(10);
+    this.projGfx   = this.add.graphics().setDepth(11);
+    this.effectGfx = this.add.graphics().setDepth(12);
+    this.hoverGfx  = this.add.graphics().setDepth(13);
 
     // Static grid drawn once
     this._drawGrid();
@@ -68,7 +69,8 @@ class GameScene extends Phaser.Scene {
 
   // ─── Static visuals ─────────────────────────────────────────────────────────
   _drawGrid() {
-    const gfx = this.add.graphics().setDepth(-10);
+    const gfx = this.gridGfx;
+    gfx.clear();
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         const isPath = PATH_TILES.has(`${col},${row}`);
@@ -87,7 +89,7 @@ class GameScene extends Phaser.Scene {
   }
 
   _drawPathMarkers() {
-    const gfx   = this.add.graphics().setDepth(-10);
+    const gfx   = this.gridGfx;
     const spawn = this.pathPixels[0];
     const exit  = this.pathPixels[this.pathPixels.length - 1];
 
@@ -246,6 +248,9 @@ class GameScene extends Phaser.Scene {
   // ─── Main update loop ───────────────────────────────────────────────────────
   update(time, delta) {
     if (this.gameOver || this.gameWon) return;
+
+    // 0 ── Redraw grid (underneath everything) ──────────────────────────────────
+    this._drawGrid();
 
     // 1 ── Wave countdown / start ─────────────────────────────────────────────
     if (!this.waveActive) {
