@@ -23,17 +23,23 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
 
   <!-- Game data / constants (must load first) -->
-  <script src="src/config.js"></script>
+  <script src="src/data/config.js"></script>
+  <script src="src/data/towers.js"></script>
+  <script src="src/data/enemies.js"></script>
+  <script src="src/data/waves.js"></script>
 
-  <!-- Entities (no dependencies except config) -->
+  <!-- Utilities -->
+  <script src="src/utils/pathfinding.js"></script>
+
+  <!-- Entities (no dependencies except data) -->
   <script src="src/entities/Enemy.js"></script>
-  <script src="src/entities/Projectile.js"></script>
   <script src="src/entities/Tower.js"></script>
+  <script src="src/entities/Projectile.js"></script>
 
-  <!-- Scenes (depend on entities + config) -->
+  <!-- Scenes (depend on entities + data) -->
   <script src="src/scenes/MenuScene.js"></script>
-  <script src="src/scenes/UIScene.js"></script>
   <script src="src/scenes/GameScene.js"></script>
+  <script src="src/scenes/UIScene.js"></script>
 
   <!-- Boot (must be last) -->
   <script src="src/main.js"></script>
