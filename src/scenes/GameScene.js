@@ -31,10 +31,10 @@ class GameScene extends Phaser.Scene {
     }));
 
     // Shared render graphics (cleared every frame)
-    this.enemyGfx  = this.add.graphics();
-    this.projGfx   = this.add.graphics();
-    this.effectGfx = this.add.graphics();
-    this.hoverGfx  = this.add.graphics();
+    this.enemyGfx  = this.add.graphics().setDepth(10);
+    this.projGfx   = this.add.graphics().setDepth(11);
+    this.effectGfx = this.add.graphics().setDepth(12);
+    this.hoverGfx  = this.add.graphics().setDepth(13);
 
     // Static grid drawn once
     this._drawGrid();
@@ -68,7 +68,7 @@ class GameScene extends Phaser.Scene {
 
   // ─── Static visuals ─────────────────────────────────────────────────────────
   _drawGrid() {
-    const gfx = this.add.graphics();
+    const gfx = this.add.graphics().setDepth(0);
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         const isPath = PATH_TILES.has(`${col},${row}`);
@@ -87,7 +87,7 @@ class GameScene extends Phaser.Scene {
   }
 
   _drawPathMarkers() {
-    const gfx   = this.add.graphics();
+    const gfx   = this.add.graphics().setDepth(0);
     const spawn = this.pathPixels[0];
     const exit  = this.pathPixels[this.pathPixels.length - 1];
 
