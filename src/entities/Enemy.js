@@ -14,30 +14,40 @@ class Enemy {
     this.pathPixels       = pathPixels;
     this.waypointIndex    = 1;
     this.alive            = true;
-    this.reached          = false;   // true when enemy exits the map
+    this.reached          = false;
     this.slowEndTime      = 0;
-    this.distanceTraveled = 0;       // used for tower targeting (target furthest along)
+    this.distanceTraveled = 0;
 
     this.x = pathPixels[0].x;
     this.y = pathPixels[0].y;
+
+    // Use sprite if image was loaded, else fall back to drawn circle
+    const spriteKey = `enemy_${type}`;
+    this.useSprite  = scene.textures.exists(spriteKey);
+
+    if (this.useSprite) {
+      const size = type === 'brute' ? 52 : type === 'runner' ? 32 : 40;
+      this.sprite = scene.add.image(this.x, this.y, spriteKey);
+      this.sprite.setDisplaySize(size, size);
+      this.sprite.setDepth(5);
+    }
   }
 
-  // Called by Frost tower projectiles
   applySlowEffect(slow, duration) {
-    this.speed      = this.baseSpeed * slow;
+    this.speed       = this.baseSpeed * slow;
     this.slowEndTime = this.scene.time.now + duration;
   }
 
   takeDamage(amount) {
     this.health -= amount;
-    if (this.health <= 0) {
-      this.health = 0;
-      this.alive  = false;
-    }
+    if (this.health <= 0) { this.health = 0; this.alive = false; }
+  }
+
+  destroy() {
+    if (this.sprite) { this.sprite.destroy(); this.sprite = null; }
   }
 
   update(delta) {
-    // Remove slow when it expires
     if (this.slowEndTime > 0 && this.scene.time.now > this.slowEndTime) {
       this.speed       = this.baseSpeed;
       this.slowEndTime = 0;
@@ -64,39 +74,40 @@ class Enemy {
       this.y += (dy / dist) * move;
       this.distanceTraveled += move;
     }
+
+    if (this.sprite) {
+      this.sprite.setPosition(this.x, this.y);
+      const isSlowed = this.slowEndTime > this.scene.time.now;
+      this.sprite.setTint(isSlowed ? 0x74b9ff : 0xffffff);
+    }
   }
 
-  // Draw this enemy into a shared Graphics object (called each frame)
   renderTo(gfx) {
     const isSlowed = this.slowEndTime > this.scene.time.now;
 
-    // Body fill
-    gfx.fillStyle(isSlowed ? 0x74b9ff : this.color, 1);
-    gfx.fillCircle(this.x, this.y, this.radius);
-
-    // White outline for brutes
-    if (this.type === 'brute') {
-      gfx.lineStyle(2, 0xecf0f1, 0.8);
-      gfx.strokeCircle(this.x, this.y, this.radius);
+    // Fallback circle for enemy types without a sprite yet
+    if (!this.useSprite) {
+      gfx.fillStyle(isSlowed ? 0x74b9ff : this.color, 1);
+      gfx.fillCircle(this.x, this.y, this.radius);
+      if (this.type === 'brute') {
+        gfx.lineStyle(2, 0xecf0f1, 0.8);
+        gfx.strokeCircle(this.x, this.y, this.radius);
+      }
+      if (isSlowed) {
+        gfx.lineStyle(1.5, 0x0984e3, 0.7);
+        gfx.strokeCircle(this.x, this.y, this.radius + 3);
+      }
     }
 
-    // Slow indicator ring
-    if (isSlowed) {
-      gfx.lineStyle(1.5, 0x0984e3, 0.7);
-      gfx.strokeCircle(this.x, this.y, this.radius + 3);
-    }
-
-    // Health bar background
+    // Health bar (always shown above sprite or circle)
     const bw = this.radius * 2.8;
     const bh = 4;
     const bx = this.x - bw / 2;
-    const by = this.y - this.radius - 8;
+    const by = this.y - this.radius - 10;
     gfx.fillStyle(0x2c2c2c, 0.9);
     gfx.fillRect(bx, by, bw, bh);
-
-    // Health bar fill
-    const ratio    = this.health / this.maxHealth;
-    const hpColor  = ratio > 0.6 ? 0x2ecc71 : ratio > 0.3 ? 0xf39c12 : 0xe74c3c;
+    const ratio   = this.health / this.maxHealth;
+    const hpColor = ratio > 0.6 ? 0x2ecc71 : ratio > 0.3 ? 0xf39c12 : 0xe74c3c;
     gfx.fillStyle(hpColor, 1);
     gfx.fillRect(bx, by, bw * ratio, bh);
   }

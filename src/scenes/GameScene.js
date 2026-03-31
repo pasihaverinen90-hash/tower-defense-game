@@ -1,6 +1,20 @@
 class GameScene extends Phaser.Scene {
   constructor() { super({ key: 'GameScene' }); }
 
+  // ─── Preload all assets ────────────────────────────────────────────────────
+  preload() {
+    this.load.image('tile_grass',    'assets/tiles/tile_grass.png');
+    this.load.image('tile_path',     'assets/tiles/tile_path.png');
+    this.load.image('tower_archer',  'assets/towers/archer.png');
+    this.load.image('tower_cannon',  'assets/towers/cannon.png');
+    this.load.image('tower_frost',   'assets/towers/frost.png');
+    this.load.image('tower_tesla',   'assets/towers/tesla.png');
+    this.load.image('enemy_grunt',   'assets/enemies/grunt.png');
+    // Add runner / brute here once you have those images:
+    // this.load.image('enemy_runner', 'assets/enemies/runner.png');
+    // this.load.image('enemy_brute',  'assets/enemies/brute.png');
+  }
+
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
   init() {
     this.gold      = 150;
@@ -13,41 +27,35 @@ class GameScene extends Phaser.Scene {
     this.towers      = [];
     this.enemies     = [];
     this.projectiles = [];
-    this.effects     = [];    // temporary visual effects (chain, splash)
+    this.effects     = [];
 
     this.spawnQueue      = [];
     this.nextSpawnDelay  = 0;
-    this.waveCountdown   = 6000;   // 6 s before first wave
+    this.waveCountdown   = 6000;
 
     this.selectedTowerType = null;
     this.selectedTower     = null;
   }
 
   create() {
-    // Build pixel-space waypoints for enemy movement
     this.pathPixels = PATH_WAYPOINTS.map(wp => ({
       x: wp.x * TILE_SIZE + TILE_SIZE / 2,
       y: wp.y * TILE_SIZE + TILE_SIZE / 2,
     }));
 
-    // Static layers FIRST (drawn underneath everything)
-    this.gridGfx = this.add.graphics();
+    // Draw grid tiles first (bottom layer)
     this._drawGrid();
     this._drawPathMarkers();
 
-    // Dynamic layers AFTER (drawn on top of the grid)
-    this.enemyGfx  = this.add.graphics();
-    this.projGfx   = this.add.graphics();
-    this.effectGfx = this.add.graphics();
-    this.hoverGfx  = this.add.graphics();
+    // Dynamic graphics layers go ON TOP of the grid
+    this.enemyGfx  = this.add.graphics().setDepth(7);
+    this.projGfx   = this.add.graphics().setDepth(8);
+    this.effectGfx = this.add.graphics().setDepth(9);
+    this.hoverGfx  = this.add.graphics().setDepth(10);
 
-    // Input
     this.input.on('pointerdown', this._handleClick, this);
 
-    // Push initial state to registry so UIScene can read it
     this._pushRegistry();
-
-    // Start UIScene alongside this one
     this.scene.launch('UIScene');
   }
 
@@ -67,32 +75,28 @@ class GameScene extends Phaser.Scene {
   _syncGold()  { this.registry.set('gold',  this.gold);  }
   _syncLives() { this.registry.set('lives', this.lives); }
 
-  // ─── Static visuals ─────────────────────────────────────────────────────────
+  // ─── Grid (sprite tiles) ───────────────────────────────────────────────────
   _drawGrid() {
-    const gfx = this.gridGfx;
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         const isPath = PATH_TILES.has(`${col},${row}`);
-        gfx.fillStyle(isPath ? 0x7d6142 : 0x2d5a27, 1);
-        gfx.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE - 1, TILE_SIZE - 1);
+        const key = isPath ? 'tile_path' : 'tile_grass';
+        const img = this.add.image(
+          col * TILE_SIZE + TILE_SIZE / 2,
+          row * TILE_SIZE + TILE_SIZE / 2,
+          key
+        );
+        img.setDisplaySize(TILE_SIZE, TILE_SIZE);
+        img.setDepth(0);
       }
-    }
-    // Subtle grid lines
-    gfx.lineStyle(1, 0x000000, 0.18);
-    for (let c = 0; c <= COLS; c++) {
-      gfx.beginPath(); gfx.moveTo(c * TILE_SIZE, 0); gfx.lineTo(c * TILE_SIZE, GAME_HEIGHT); gfx.strokePath();
-    }
-    for (let r = 0; r <= ROWS; r++) {
-      gfx.beginPath(); gfx.moveTo(0, r * TILE_SIZE); gfx.lineTo(GAME_WIDTH, r * TILE_SIZE); gfx.strokePath();
     }
   }
 
   _drawPathMarkers() {
-    const gfx   = this.gridGfx;
+    const gfx   = this.add.graphics().setDepth(1);
     const spawn = this.pathPixels[0];
     const exit  = this.pathPixels[this.pathPixels.length - 1];
 
-    // Spawn arrow (red triangle pointing right)
     gfx.fillStyle(0xe74c3c, 0.9);
     gfx.fillTriangle(
       spawn.x - 12, spawn.y - 10,
@@ -100,13 +104,12 @@ class GameScene extends Phaser.Scene {
       spawn.x + 8,  spawn.y
     );
 
-    // Exit diamond (green)
     gfx.fillStyle(0x2ecc71, 0.9);
     gfx.fillTriangle(exit.x - 10, exit.y, exit.x, exit.y - 10, exit.x + 10, exit.y);
     gfx.fillTriangle(exit.x - 10, exit.y, exit.x, exit.y + 10, exit.x + 10, exit.y);
   }
 
-  // ─── Effects system ─────────────────────────────────────────────────────────
+  // ─── Effects ───────────────────────────────────────────────────────────────
   addEffect(eff) {
     this.effects.push({ ...eff, maxTimer: eff.timer });
   }
@@ -114,10 +117,9 @@ class GameScene extends Phaser.Scene {
   _renderEffects(delta) {
     this.effectGfx.clear();
     for (let i = this.effects.length - 1; i >= 0; i--) {
-      const eff = this.effects[i];
-      eff.timer -= delta;
+      const eff      = this.effects[i];
+      eff.timer     -= delta;
       if (eff.timer <= 0) { this.effects.splice(i, 1); continue; }
-
       const progress = 1 - eff.timer / eff.maxTimer;
       const alpha    = eff.timer / eff.maxTimer;
 
@@ -145,17 +147,15 @@ class GameScene extends Phaser.Scene {
   // ─── Input ─────────────────────────────────────────────────────────────────
   _handleClick(pointer) {
     if (this.gameOver || this.gameWon) return;
-    if (pointer.x >= GAME_WIDTH) return;   // UI area – handled by UIScene
+    if (pointer.x >= GAME_WIDTH) return;
 
     const tileX = Math.floor(pointer.x / TILE_SIZE);
     const tileY = Math.floor(pointer.y / TILE_SIZE);
     if (tileX < 0 || tileX >= COLS || tileY < 0 || tileY >= ROWS) return;
 
-    // Clicked on an existing tower?
     const clicked = this.towers.find(t => t.tileX === tileX && t.tileY === tileY);
     if (clicked) { this.selectTower(clicked); return; }
 
-    // Placing a tower?
     if (this.selectedTowerType &&
         !PATH_TILES.has(`${tileX},${tileY}`) &&
         !this.towers.find(t => t.tileX === tileX && t.tileY === tileY)) {
@@ -174,7 +174,6 @@ class GameScene extends Phaser.Scene {
     this._syncGold();
   }
 
-  // Called by UIScene buttons too
   selectTower(tower) {
     if (this.selectedTower) this.selectedTower.setSelected(false);
     this.selectedTower = tower;
@@ -229,10 +228,9 @@ class GameScene extends Phaser.Scene {
     this.registry.set('wave',       this.wave);
     this.registry.set('waveActive', true);
 
-    // Build flat spawn queue from wave groups
     this.spawnQueue     = [];
     this.nextSpawnDelay = 0;
-    const groups = WAVE_DEFS[this.wave - 1];
+    const groups        = WAVE_DEFS[this.wave - 1];
     groups.forEach(group => {
       for (let i = 0; i < group.count; i++) {
         this.spawnQueue.push({ type: group.type, delay: group.interval });
@@ -244,25 +242,21 @@ class GameScene extends Phaser.Scene {
     if (!this.waveActive) this.waveCountdown = 0;
   }
 
-  // ─── Main update loop ───────────────────────────────────────────────────────
+  // ─── Main update ────────────────────────────────────────────────────────────
   update(time, delta) {
     if (this.gameOver || this.gameWon) return;
 
-    // 1 ── Wave countdown / start ─────────────────────────────────────────────
+    // Wave countdown
     if (!this.waveActive) {
       this.waveCountdown -= delta;
       this.registry.set('waveCountdown', Math.max(0, this.waveCountdown));
       if (this.waveCountdown <= 0) {
-        if (this.wave < WAVE_DEFS.length) {
-          this._startWave();
-        } else {
-          this.gameWon = true;
-          this.registry.set('gameWon', true);
-        }
+        if (this.wave < WAVE_DEFS.length) this._startWave();
+        else { this.gameWon = true; this.registry.set('gameWon', true); }
       }
     }
 
-    // 2 ── Spawn enemies ───────────────────────────────────────────────────────
+    // Spawn enemies
     if (this.waveActive && this.spawnQueue.length > 0) {
       this.nextSpawnDelay -= delta;
       if (this.nextSpawnDelay <= 0) {
@@ -272,32 +266,30 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // 3 ── Update & cull enemies ───────────────────────────────────────────────
+    // Update & render enemies
     this.enemyGfx.clear();
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
       e.update(delta);
-
       if (!e.alive) {
         this.gold += e.reward;
         this._syncGold();
+        e.destroy();
         this.enemies.splice(i, 1);
         continue;
       }
       if (e.reached) {
         this.lives = Math.max(0, this.lives - 1);
         this._syncLives();
+        e.destroy();
         this.enemies.splice(i, 1);
-        if (this.lives <= 0) {
-          this.gameOver = true;
-          this.registry.set('gameOver', true);
-        }
+        if (this.lives <= 0) { this.gameOver = true; this.registry.set('gameOver', true); }
         continue;
       }
       e.renderTo(this.enemyGfx);
     }
 
-    // 4 ── Check wave complete ─────────────────────────────────────────────────
+    // Wave complete check
     if (this.waveActive && this.spawnQueue.length === 0 && this.enemies.length === 0) {
       this.waveActive = false;
       this.registry.set('waveActive', false);
@@ -310,14 +302,14 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // 5 ── Towers fire ─────────────────────────────────────────────────────────
+    // Towers fire
     const now = this.time.now;
     for (const tower of this.towers) {
       const shot = tower.tryFire(this.enemies, now);
       if (shot) this.projectiles.push(new Projectile(this, shot));
     }
 
-    // 6 ── Update & render projectiles ─────────────────────────────────────────
+    // Update & render projectiles
     this.projGfx.clear();
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       const p = this.projectiles[i];
@@ -326,10 +318,7 @@ class GameScene extends Phaser.Scene {
       p.renderTo(this.projGfx);
     }
 
-    // 7 ── Temporary effects ───────────────────────────────────────────────────
     this._renderEffects(delta);
-
-    // 8 ── Hover highlight ─────────────────────────────────────────────────────
     this._renderHover();
   }
 
@@ -348,9 +337,7 @@ class GameScene extends Phaser.Scene {
     const hasTower = this.towers.some(t => t.tileX === tx && t.tileY === ty);
     const canPlace = !isPath && !hasTower;
 
-    const px = tx * TILE_SIZE;
-    const py = ty * TILE_SIZE;
-
+    const px = tx * TILE_SIZE, py = ty * TILE_SIZE;
     this.hoverGfx.fillStyle(canPlace ? 0x2ecc71 : 0xe74c3c, 0.28);
     this.hoverGfx.fillRect(px, py, TILE_SIZE - 1, TILE_SIZE - 1);
 
