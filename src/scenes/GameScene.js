@@ -9,10 +9,9 @@ class GameScene extends Phaser.Scene {
     this.load.image('tower_cannon', 'assets/towers/cannon.png');
     this.load.image('tower_frost',  'assets/towers/frost.png');
     this.load.image('tower_tesla',  'assets/towers/tesla.png');
-    // Uncomment when you have enemy sprites:
-    // this.load.image('enemy_grunt',  'assets/enemies/grunt.png');
-    // this.load.image('enemy_runner', 'assets/enemies/runner.png');
-    // this.load.image('enemy_brute',  'assets/enemies/brute.png');
+    this.load.image('enemy_grunt',  'assets/enemies/grunt.png');
+    this.load.image('enemy_runner', 'assets/enemies/runner.png');
+    this.load.image('enemy_brute',  'assets/enemies/brute.png');
   }
 
   // ─── Init — receives { levelIndex } from scene.start() ────────────────────
