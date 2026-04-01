@@ -21,22 +21,24 @@ class Enemy {
     this.x = pathPixels[0].x;
     this.y = pathPixels[0].y;
 
-    // Use animated sprite for brute, static image for others, circle fallback
-    if (type === 'brute' && scene.textures.exists('brute_walk')) {
-      this.useSprite   = true;
-      this.isAnimated  = true;
-      this.sprite = scene.add.sprite(this.x, this.y, 'brute_walk');
-      this.sprite.setDisplaySize(52, 52);
+    // Animated sprites for grunt and brute, circle fallback for runner
+    const ANIMATED = { grunt: 'grunt_walk', brute: 'brute_walk' };
+    const ANIM_SIZE = { grunt: 44, brute: 52 };
+
+    if (ANIMATED[type] && scene.textures.exists(ANIMATED[type])) {
+      this.useSprite  = true;
+      this.isAnimated = true;
+      this.sprite = scene.add.sprite(this.x, this.y, ANIMATED[type]);
+      this.sprite.setDisplaySize(ANIM_SIZE[type], ANIM_SIZE[type]);
       this.sprite.setDepth(5);
-      this.sprite.play('brute_down');
+      this.sprite.play(`${type}_down`);
       this.lastDir = 'down';
     } else {
       const spriteKey = `enemy_${type}`;
       this.useSprite  = scene.textures.exists(spriteKey);
       if (this.useSprite) {
-        const size = type === 'runner' ? 32 : 40;
         this.sprite = scene.add.image(this.x, this.y, spriteKey);
-        this.sprite.setDisplaySize(size, size);
+        this.sprite.setDisplaySize(type === 'runner' ? 32 : 40, type === 'runner' ? 32 : 40);
         this.sprite.setDepth(5);
       }
     }
@@ -101,10 +103,10 @@ class Enemy {
           this.lastDir = dir;
           this.sprite.setFlipX(false);
           if (dir === 'left') {
-            this.sprite.play('brute_left', true);
+            this.sprite.play(`${this.type}_left`, true);
             this.sprite.setFlipX(true);
           } else {
-            this.sprite.play(`brute_${dir}`, true);
+            this.sprite.play(`${this.type}_${dir}`, true);
           }
         }
       }

@@ -9,8 +9,10 @@ class GameScene extends Phaser.Scene {
     this.load.image('tower_cannon', 'assets/towers/cannon.png');
     this.load.image('tower_frost',  'assets/towers/frost.png');
     this.load.image('tower_tesla',  'assets/towers/tesla.png');
-    this.load.image('enemy_grunt',  'assets/enemies/grunt.png');
     this.load.image('enemy_runner', 'assets/enemies/runner.png');
+    this.load.spritesheet('grunt_walk', 'assets/enemies/grunt_walk.png', {
+      frameWidth: 160, frameHeight: 160
+    });
     this.load.spritesheet('brute_walk', 'assets/enemies/brute_walk.png', {
       frameWidth: 160, frameHeight: 160
     });
@@ -54,7 +56,7 @@ class GameScene extends Phaser.Scene {
 
     this._drawGrid();
     this._drawPathMarkers();
-    this._createBruteAnims();
+    this._createEnemyAnims();
 
     // Dynamic layers on top of grid
     this.enemyGfx  = this.add.graphics().setDepth(7);
@@ -120,22 +122,24 @@ class GameScene extends Phaser.Scene {
     gfx.fillTriangle(exit.x - 10, exit.y, exit.x, exit.y + 10, exit.x + 10, exit.y);
   }
 
-  // ─── Brute animations ──────────────────────────────────────────────────────
-  _createBruteAnims() {
-    [['down', 0], ['right', 1], ['up', 2]].forEach(([dir, row]) => {
+  // ─── Enemy animations ──────────────────────────────────────────────────────
+  _createEnemyAnims() {
+    [['grunt', 'grunt_walk', 8], ['brute', 'brute_walk', 6]].forEach(([type, key, fps]) => {
+      [['down', 0], ['right', 1], ['up', 2]].forEach(([dir, row]) => {
+        this.anims.create({
+          key: `${type}_${dir}`,
+          frames: this.anims.generateFrameNumbers(key, { start: row * 4, end: row * 4 + 3 }),
+          frameRate: fps,
+          repeat: -1,
+        });
+      });
+      // Left = right row mirrored via flipX in Enemy.js
       this.anims.create({
-        key: `brute_${dir}`,
-        frames: this.anims.generateFrameNumbers('brute_walk', { start: row * 4, end: row * 4 + 3 }),
-        frameRate: 6,
+        key: `${type}_left`,
+        frames: this.anims.generateFrameNumbers(key, { start: 4, end: 7 }),
+        frameRate: fps,
         repeat: -1,
       });
-    });
-    // Left = right frames mirrored (handled in Enemy.js via flipX)
-    this.anims.create({
-      key: 'brute_left',
-      frames: this.anims.generateFrameNumbers('brute_walk', { start: 4, end: 7 }),
-      frameRate: 6,
-      repeat: -1,
     });
   }
 
