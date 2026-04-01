@@ -21,15 +21,24 @@ class Enemy {
     this.x = pathPixels[0].x;
     this.y = pathPixels[0].y;
 
-    // Use sprite if image was loaded, else fall back to drawn circle
-    const spriteKey = `enemy_${type}`;
-    this.useSprite  = scene.textures.exists(spriteKey);
-
-    if (this.useSprite) {
-      const size = type === 'brute' ? 52 : type === 'runner' ? 32 : 40;
-      this.sprite = scene.add.image(this.x, this.y, spriteKey);
-      this.sprite.setDisplaySize(size, size);
+    // Use animated sprite for brute, static image for others, circle fallback
+    if (type === 'brute' && scene.textures.exists('brute_walk')) {
+      this.useSprite   = true;
+      this.isAnimated  = true;
+      this.sprite = scene.add.sprite(this.x, this.y, 'brute_walk');
+      this.sprite.setDisplaySize(52, 52);
       this.sprite.setDepth(5);
+      this.sprite.play('brute_down');
+      this.lastDir = 'down';
+    } else {
+      const spriteKey = `enemy_${type}`;
+      this.useSprite  = scene.textures.exists(spriteKey);
+      if (this.useSprite) {
+        const size = type === 'runner' ? 32 : 40;
+        this.sprite = scene.add.image(this.x, this.y, spriteKey);
+        this.sprite.setDisplaySize(size, size);
+        this.sprite.setDepth(5);
+      }
     }
   }
 
@@ -79,6 +88,26 @@ class Enemy {
       this.sprite.setPosition(this.x, this.y);
       const isSlowed = this.slowEndTime > this.scene.time.now;
       this.sprite.setTint(isSlowed ? 0x74b9ff : 0xffffff);
+
+      if (this.isAnimated) {
+        const absDx = Math.abs(dx), absDy = Math.abs(dy);
+        let dir;
+        if (absDx > absDy) {
+          dir = dx > 0 ? 'right' : 'left';
+        } else {
+          dir = dy > 0 ? 'down' : 'up';
+        }
+        if (dir !== this.lastDir) {
+          this.lastDir = dir;
+          this.sprite.setFlipX(false);
+          if (dir === 'left') {
+            this.sprite.play('brute_left', true);
+            this.sprite.setFlipX(true);
+          } else {
+            this.sprite.play(`brute_${dir}`, true);
+          }
+        }
+      }
     }
   }
 

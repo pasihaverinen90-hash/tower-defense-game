@@ -11,7 +11,9 @@ class GameScene extends Phaser.Scene {
     this.load.image('tower_tesla',  'assets/towers/tesla.png');
     this.load.image('enemy_grunt',  'assets/enemies/grunt.png');
     this.load.image('enemy_runner', 'assets/enemies/runner.png');
-    this.load.image('enemy_brute',  'assets/enemies/brute.png');
+    this.load.spritesheet('brute_walk', 'assets/enemies/brute_walk.png', {
+      frameWidth: 200, frameHeight: 200
+    });
   }
 
   // ─── Init — receives { levelIndex } from scene.start() ────────────────────
@@ -52,6 +54,7 @@ class GameScene extends Phaser.Scene {
 
     this._drawGrid();
     this._drawPathMarkers();
+    this._createBruteAnims();
 
     // Dynamic layers on top of grid
     this.enemyGfx  = this.add.graphics().setDepth(7);
@@ -115,6 +118,25 @@ class GameScene extends Phaser.Scene {
     gfx.fillStyle(0x2ecc71, 0.9);
     gfx.fillTriangle(exit.x - 10, exit.y, exit.x, exit.y - 10, exit.x + 10, exit.y);
     gfx.fillTriangle(exit.x - 10, exit.y, exit.x, exit.y + 10, exit.x + 10, exit.y);
+  }
+
+  // ─── Brute animations ──────────────────────────────────────────────────────
+  _createBruteAnims() {
+    [['down', 0], ['right', 1], ['up', 2]].forEach(([dir, row]) => {
+      this.anims.create({
+        key: `brute_${dir}`,
+        frames: this.anims.generateFrameNumbers('brute_walk', { start: row * 4, end: row * 4 + 3 }),
+        frameRate: 6,
+        repeat: -1,
+      });
+    });
+    // Left = right frames mirrored (handled in Enemy.js via flipX)
+    this.anims.create({
+      key: 'brute_left',
+      frames: this.anims.generateFrameNumbers('brute_walk', { start: 4, end: 7 }),
+      frameRate: 6,
+      repeat: -1,
+    });
   }
 
   // ─── Effects ───────────────────────────────────────────────────────────────
