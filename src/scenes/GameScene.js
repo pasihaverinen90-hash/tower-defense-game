@@ -3,12 +3,12 @@ class GameScene extends Phaser.Scene {
 
   // ─── Preload ───────────────────────────────────────────────────────────────
   preload() {
-    this.load.image('tile_grass',   'assets/tiles/tile_grass.png');
-    this.load.image('tile_path',    'assets/tiles/tile_path.png');
-    this.load.image('tower_archer', 'assets/towers/archer.png');
-    this.load.image('tower_cannon', 'assets/towers/cannon.png');
-    this.load.image('tower_frost',  'assets/towers/frost.png');
-    this.load.image('tower_tesla',  'assets/towers/tesla.png');
+    this.load.image('tile_grass',   'tile_grass.png');
+    this.load.image('tile_path',    'tile_path.png');
+    this.load.image('tower_archer', 'archer.png');
+    this.load.image('tower_cannon', 'cannon.png');
+    this.load.image('tower_frost',  'frost.png');
+    this.load.image('tower_tesla',  'tesla.png');
     this.load.image('enemy_grunt',  'assets/enemies/grunt.png');
     // Uncomment when you have these sprites:
     // this.load.image('enemy_runner', 'assets/enemies/runner.png');
