@@ -22,8 +22,8 @@ class Enemy {
     this.y = pathPixels[0].y;
 
     // Animated sprites for grunt and brute, circle fallback for runner
-    const ANIMATED = { grunt: 'grunt_walk', brute: 'brute_walk' };
-    const ANIM_SIZE = { grunt: 44, brute: 52 };
+    const ANIMATED = { grunt: 'grunt_walk', runner: 'runner_walk', brute: 'brute_walk' };
+    const ANIM_SIZE = { grunt: 44, runner: 36, brute: 52 };
 
     if (ANIMATED[type] && scene.textures.exists(ANIMATED[type])) {
       this.useSprite  = true;

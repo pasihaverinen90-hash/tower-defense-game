@@ -9,7 +9,9 @@ class GameScene extends Phaser.Scene {
     this.load.image('tower_cannon', 'assets/towers/cannon.png');
     this.load.image('tower_frost',  'assets/towers/frost.png');
     this.load.image('tower_tesla',  'assets/towers/tesla.png');
-    this.load.image('enemy_runner', 'assets/enemies/runner.png');
+    this.load.spritesheet('runner_walk', 'assets/enemies/runner_walk.png', {
+      frameWidth: 160, frameHeight: 160
+    });
     this.load.spritesheet('grunt_walk', 'assets/enemies/grunt_walk.png', {
       frameWidth: 160, frameHeight: 160
     });
@@ -124,7 +126,7 @@ class GameScene extends Phaser.Scene {
 
   // ─── Enemy animations ──────────────────────────────────────────────────────
   _createEnemyAnims() {
-    [['grunt', 'grunt_walk', 8], ['brute', 'brute_walk', 6]].forEach(([type, key, fps]) => {
+    [['grunt', 'grunt_walk', 8], ['runner', 'runner_walk', 12], ['brute', 'brute_walk', 6]].forEach(([type, key, fps]) => {
       [['down', 0], ['right', 1], ['up', 2]].forEach(([dir, row]) => {
         this.anims.create({
           key: `${type}_${dir}`,
