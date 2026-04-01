@@ -273,6 +273,27 @@ class GameScene extends Phaser.Scene {
     if (!this.waveActive) this.waveCountdown = 0;
   }
 
+  _scheduleNextLevel() {
+    const DELAY = 4000;
+    const nextIndex = this.levelIndex + 1;
+    this.registry.set('nextLevelCountdown', DELAY);
+
+    this.time.addEvent({
+      delay: 100,
+      repeat: (DELAY / 100) - 1,
+      callback: () => {
+        const remaining = (this.registry.get('nextLevelCountdown') ?? DELAY) - 100;
+        this.registry.set('nextLevelCountdown', Math.max(0, remaining));
+      },
+    });
+
+    this.time.delayedCall(DELAY, () => {
+      this.scene.stop('UIScene');
+      this.scene.stop('GameScene');
+      this.scene.start('GameScene', { levelIndex: nextIndex });
+    });
+  }
+
   // ─── Update loop ───────────────────────────────────────────────────────────
   update(time, delta) {
     if (this.gameOver || this.levelComplete || this.gameWon) return;
@@ -289,6 +310,7 @@ class GameScene extends Phaser.Scene {
           if (this.levelIndex + 1 < LEVEL_DEFS.length) {
             this.levelComplete = true;
             this.registry.set('levelComplete', true);
+            this._scheduleNextLevel();
           } else {
             this.gameWon = true;
             this.registry.set('gameWon', true);
@@ -338,6 +360,7 @@ class GameScene extends Phaser.Scene {
         if (this.levelIndex + 1 < LEVEL_DEFS.length) {
           this.levelComplete = true;
           this.registry.set('levelComplete', true);
+          this._scheduleNextLevel();
         } else {
           this.gameWon = true;
           this.registry.set('gameWon', true);

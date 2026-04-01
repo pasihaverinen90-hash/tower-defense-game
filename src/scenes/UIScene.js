@@ -204,74 +204,25 @@ class UIScene extends Phaser.Scene {
   }
 
   _makeLevelCompleteOverlay(cx, cy) {
-    const W = CANVAS_WIDTH, H = CANVAS_HEIGHT;
-    const container = this.add.container(cx, cy);
+    const W = CANVAS_WIDTH;
+    const container = this.add.container(cx, -40);
 
-    const dim = this.add.graphics();
-    dim.fillStyle(0x000000, 0.82);
-    dim.fillRect(-W / 2, -H / 2, W, H);
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.75);
+    bg.fillRoundedRect(-280, -38, 560, 76, 10);
+    bg.lineStyle(2, 0xf1c40f, 0.8);
+    bg.strokeRoundedRect(-280, -38, 560, 76, 10);
 
-    // Stars decoration
-    const stars = this.add.graphics();
-    [-120, 0, 120].forEach((x, idx) => {
-      const scale = idx === 1 ? 1 : 0.75;
-      stars.fillStyle(0xffd700, 1);
-      for (let s = 0; s < 5; s++) {
-        const angle = (s * 72 - 90) * Math.PI / 180;
-        const r = 22 * scale;
-        const ri = r * 0.4;
-        const pts = [];
-        for (let p = 0; p < 10; p++) {
-          const a = (p * 36 - 90) * Math.PI / 180;
-          const rad = p % 2 === 0 ? r : ri;
-          pts.push(x + Math.cos(a) * rad, -165 + Math.sin(a) * rad);
-        }
-        stars.fillPoints(pts.map((v, i) => ({ x: pts[i * 2], y: pts[i * 2 + 1] })).filter((_, i) => i < 10), true);
-      }
-    });
+    const titleTxt = this.add.text(-160, 0, '⭐  LEVEL COMPLETE!', {
+      fontSize: '26px', fontFamily: 'Arial Black', color: '#f1c40f',
+      stroke: '#000', strokeThickness: 4,
+    }).setOrigin(0, 0.5);
 
-    const titleTxt = this.add.text(0, -100, '⭐  LEVEL COMPLETE!', {
-      fontSize: '50px', fontFamily: 'Arial Black', color: '#f1c40f',
-      stroke: '#000', strokeThickness: 6
-    }).setOrigin(0.5);
+    this.levelCompleteCountdownTxt = this.add.text(180, 0, '', {
+      fontSize: '18px', fontFamily: 'Arial', color: '#95a5a6',
+    }).setOrigin(0, 0.5);
 
-    this.levelCompleteSubText = this.add.text(0, -30, '', {
-      fontSize: '22px', fontFamily: 'Arial Black', color: '#ecf0f1'
-    }).setOrigin(0.5);
-
-    const subTxt = this.add.text(0, 14, 'Get ready for a harder path...', {
-      fontSize: '16px', fontFamily: 'Arial', color: '#95a5a6'
-    }).setOrigin(0.5);
-
-    // Next Level button
-    const nextBtn = this.add.text(0, 75, '▶▶  NEXT LEVEL', {
-      fontSize: '24px', fontFamily: 'Arial Black', color: '#ffffff',
-      backgroundColor: '#2980b9', padding: { x: 28, y: 14 }
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-    nextBtn.on('pointerover', () => nextBtn.setStyle({ backgroundColor: '#3498db' }));
-    nextBtn.on('pointerout',  () => nextBtn.setStyle({ backgroundColor: '#2980b9' }));
-    nextBtn.on('pointerdown', () => {
-      const gs = this.scene.get('GameScene');
-      const nextLevelIndex = gs ? gs.levelIndex + 1 : 1;
-      this.scene.stop('GameScene');
-      this.scene.stop('UIScene');
-      this.scene.start('GameScene', { levelIndex: nextLevelIndex });
-    });
-
-    // Back to menu button
-    const menuBtn = this.add.text(0, 145, 'Return to Menu', {
-      fontSize: '15px', fontFamily: 'Arial', color: '#636e72'
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-    menuBtn.on('pointerover', () => menuBtn.setStyle({ color: '#95a5a6' }));
-    menuBtn.on('pointerout',  () => menuBtn.setStyle({ color: '#636e72' }));
-    menuBtn.on('pointerdown', () => {
-      this.scene.stop('GameScene');
-      this.scene.start('MenuScene');
-    });
-
-    container.add([dim, titleTxt, this.levelCompleteSubText, subTxt, nextBtn, menuBtn]);
+    container.add([bg, titleTxt, this.levelCompleteCountdownTxt]);
     return container;
   }
 
@@ -315,10 +266,12 @@ class UIScene extends Phaser.Scene {
     this._updateTowerInfo(selTower, gold);
 
     // Show correct overlay
-    if (levelComplete && this.levelCompleteSubText) {
-      const nextDef = LEVEL_DEFS[levelIndex + 1];
-      this.levelCompleteSubText.setText(nextDef ? `Up next: ${nextDef.name} — ${nextDef.subtitle}` : '');
+    if (levelComplete) {
       this.levelCompleteOverlay.setVisible(true);
+      const remaining = this.registry.get('nextLevelCountdown') ?? 4000;
+      if (this.levelCompleteCountdownTxt) {
+        this.levelCompleteCountdownTxt.setText(`Next level in ${Math.ceil(remaining / 1000)}s`);
+      }
     }
     if (gameOver) this.gameOverOverlay.setVisible(true);
     if (gameWon)  this.gameWonOverlay.setVisible(true);
