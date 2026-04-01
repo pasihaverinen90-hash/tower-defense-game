@@ -12,7 +12,7 @@ class GameScene extends Phaser.Scene {
     this.load.image('enemy_grunt',  'assets/enemies/grunt.png');
     this.load.image('enemy_runner', 'assets/enemies/runner.png');
     this.load.spritesheet('brute_walk', 'assets/enemies/brute_walk.png', {
-      frameWidth: 200, frameHeight: 200
+      frameWidth: 160, frameHeight: 160
     });
   }
 
