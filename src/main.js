@@ -1,5 +1,5 @@
 const config = {
-  type: Phaser.AUTO,
+  type: Phaser.CANVAS,
   width:  CANVAS_WIDTH,
   height: CANVAS_HEIGHT,
   backgroundColor: '#0d1117',
