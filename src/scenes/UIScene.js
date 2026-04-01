@@ -99,10 +99,8 @@ class UIScene extends Phaser.Scene {
       const icon = this.add.graphics();
       icon.fillStyle(0x1e272e, 1);
       icon.fillRect(bx + 8, by + 9, 44, 44);
-      icon.fillStyle(def.color, 1);
-      icon.fillRect(bx + 16, by + 17, 28, 28);
-      icon.fillStyle(0xffffff, 0.12);
-      icon.fillRect(bx + 16, by + 17, 28, 10);
+      this.add.image(bx + 30, by + 31, `tower_${type}`)
+        .setDisplaySize(36, 36);
 
       this.add.text(bx + 62, by + 8,  def.name,           { fontSize: '15px', fontFamily: 'Arial Black', color: '#ecf0f1' });
       this.add.text(bx + 62, by + 28, `${def.cost}g`,     { fontSize: '13px', fontFamily: 'Arial',       color: '#f1c40f' });

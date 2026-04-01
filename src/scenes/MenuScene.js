@@ -1,6 +1,13 @@
 class MenuScene extends Phaser.Scene {
   constructor() { super({ key: 'MenuScene' }); }
 
+  preload() {
+    this.load.image('tower_archer', 'assets/towers/archer.png');
+    this.load.image('tower_cannon', 'assets/towers/cannon.png');
+    this.load.image('tower_frost',  'assets/towers/frost.png');
+    this.load.image('tower_tesla',  'assets/towers/tesla.png');
+  }
+
   create() {
     const W = CANVAS_WIDTH, H = CANVAS_HEIGHT;
     const cx = W / 2;
@@ -49,8 +56,8 @@ class MenuScene extends Phaser.Scene {
       const icon = this.add.graphics();
       icon.fillStyle(0x1e272e, 1);
       icon.fillRect(bx - 20, cardY - cardH / 2 + 10, 40, 40);
-      icon.fillStyle(def.color, 1);
-      icon.fillRect(bx - 13, cardY - cardH / 2 + 17, 26, 26);
+      this.add.image(bx, cardY - cardH / 2 + 30, `tower_${info.type}`)
+        .setDisplaySize(34, 34);
 
       this.add.text(bx, cardY + 8,  def.name, { fontSize: '14px', fontFamily: 'Arial Black', color: '#ecf0f1' }).setOrigin(0.5);
       this.add.text(bx, cardY + 28, info.sub, { fontSize: '11px', fontFamily: 'Arial',       color: '#7f8c8d' }).setOrigin(0.5);
