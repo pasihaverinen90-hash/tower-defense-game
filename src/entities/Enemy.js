@@ -1,10 +1,13 @@
 class Enemy {
-  constructor(scene, type, pathPixels) {
+  constructor(scene, type, pathPixels, wave = 1) {
     this.scene      = scene;
     this.type       = type;
     const def       = ENEMY_DEFS[type];
-    this.maxHealth  = def.health;
-    this.health     = def.health;
+
+    // HP scales +7% per wave so later waves require upgraded towers to handle
+    const hpMult    = 1 + (wave - 1) * 0.07;
+    this.maxHealth  = Math.ceil(def.health * hpMult);
+    this.health     = this.maxHealth;
     this.baseSpeed  = def.speed;
     this.speed      = def.speed;
     this.reward     = def.reward;
@@ -21,7 +24,7 @@ class Enemy {
     this.x = pathPixels[0].x;
     this.y = pathPixels[0].y;
 
-    // Animated sprites for grunt and brute, circle fallback for runner
+    // Animated walk sprites for all enemy types, circle fallback if missing
     const ANIMATED = { grunt: 'grunt_walk', runner: 'runner_walk', brute: 'brute_walk' };
     const ANIM_SIZE = { grunt: 44, runner: 36, brute: 52 };
 
@@ -34,13 +37,7 @@ class Enemy {
       this.sprite.play(`${type}_down`);
       this.lastDir = 'down';
     } else {
-      const spriteKey = `enemy_${type}`;
-      this.useSprite  = scene.textures.exists(spriteKey);
-      if (this.useSprite) {
-        this.sprite = scene.add.image(this.x, this.y, spriteKey);
-        this.sprite.setDisplaySize(type === 'runner' ? 32 : 40, type === 'runner' ? 32 : 40);
-        this.sprite.setDepth(5);
-      }
+      this.useSprite = false;
     }
   }
 
@@ -93,21 +90,11 @@ class Enemy {
 
       if (this.isAnimated) {
         const absDx = Math.abs(dx), absDy = Math.abs(dy);
-        let dir;
-        if (absDx > absDy) {
-          dir = dx > 0 ? 'right' : 'left';
-        } else {
-          dir = dy > 0 ? 'down' : 'up';
-        }
+        const dir = absDx > absDy ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
         if (dir !== this.lastDir) {
           this.lastDir = dir;
-          this.sprite.setFlipX(false);
-          if (dir === 'left') {
-            this.sprite.play(`${this.type}_left`, true);
-            this.sprite.setFlipX(true);
-          } else {
-            this.sprite.play(`${this.type}_${dir}`, true);
-          }
+          this.sprite.setFlipX(dir === 'left');
+          this.sprite.play(dir === 'left' ? `${this.type}_left` : `${this.type}_${dir}`, true);
         }
       }
     }

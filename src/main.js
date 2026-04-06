@@ -3,7 +3,7 @@ const config = {
   width:  CANVAS_WIDTH,
   height: CANVAS_HEIGHT,
   backgroundColor: '#0d1117',
-  scene: [MenuScene, GameScene, UIScene],
+  scene: [MenuScene, BuffScene, GameScene, UIScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
