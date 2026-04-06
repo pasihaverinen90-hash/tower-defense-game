@@ -276,7 +276,6 @@ class GameScene extends Phaser.Scene {
       this.scene.launch('UIScene');
       this.registry.set('gameWon', true);
     } else {
-      this.scene.stop();
       this.scene.start('BuffScene', {
         livesLeft:  this.lives,
         levelIndex: this.levelIndex,

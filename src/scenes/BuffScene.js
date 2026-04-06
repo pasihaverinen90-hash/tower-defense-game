@@ -19,6 +19,8 @@ class BuffScene extends Phaser.Scene {
   }
 
   create() {
+    this.input.enabled = true;
+    this.input.setDefaultCursor('default');
     const W = CANVAS_WIDTH, H = CANVAS_HEIGHT, cx = W / 2;
 
     // ── Dark overlay background ────────────────────────────────────────────
