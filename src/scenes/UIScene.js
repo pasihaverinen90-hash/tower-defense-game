@@ -23,6 +23,27 @@ class UIScene extends Phaser.Scene {
     this._updateHUD();
   }
 
+  // ─── Countdown bar runs every frame to avoid rebuilding interactive zones ───
+  update() {
+    const gs = this.scene.get('GameScene');
+    if (!gs || !this.countdownBar) return;
+
+    const waveActive = gs.waveActive;
+    const wave       = gs.wave;
+    const total      = this.registry.get('totalWaves') ?? 0;
+    const countdown  = gs.waveCountdown;
+
+    this.countdownBar.clear();
+    if (!waveActive && wave < total) {
+      const maxCD = wave === 0 ? 6000 : 5000;
+      this.countdownBar.fillStyle(0x2d6a9f, 1);
+      this.countdownBar.fillRect(this.PX + 8, 100, (this.PW - 16) * Math.min(1, countdown / maxCD), 12);
+      this.countdownText.setText(`Next wave in ${Math.ceil(countdown / 1000)}s`);
+    } else {
+      this.countdownText.setText(waveActive ? 'Wave active!' : '');
+    }
+  }
+
   // ─── Static HUD ────────────────────────────────────────────────────────────
   _createStaticUI() {
     const PX = this.PX, PW = this.PW, cx = PX + PW / 2;
@@ -176,35 +197,22 @@ class UIScene extends Phaser.Scene {
 
   // ─── HUD update ─────────────────────────────────────────────────────────────
   _updateHUD() {
-    const gold        = this.registry.get('gold')          ?? 150;
-    const lives       = this.registry.get('lives')         ?? 20;
-    const wave        = this.registry.get('wave')          ?? 0;
-    const total       = this.registry.get('totalWaves')    ?? 15;
-    const waveActive  = this.registry.get('waveActive')    ?? false;
-    const countdown   = this.registry.get('waveCountdown') ?? 0;
-    const levelName   = this.registry.get('levelName')     ?? '';
-    const levelSub    = this.registry.get('levelSubtitle') ?? '';
-    const buffs       = this.registry.get('buffs')         ?? null;
-    const gameOver    = this.registry.get('gameOver')      ?? false;
-    const gameWon     = this.registry.get('gameWon')       ?? false;
-    const selTower    = this.registry.get('selectedTower');
+    const gold      = this.registry.get('gold')          ?? 150;
+    const lives     = this.registry.get('lives')         ?? 20;
+    const wave      = this.registry.get('wave')          ?? 0;
+    const total     = this.registry.get('totalWaves')    ?? 15;
+    const levelName = this.registry.get('levelName')     ?? '';
+    const levelSub  = this.registry.get('levelSubtitle') ?? '';
+    const buffs     = this.registry.get('buffs')         ?? null;
+    const gameOver  = this.registry.get('gameOver')      ?? false;
+    const gameWon   = this.registry.get('gameWon')       ?? false;
+    const selTower  = this.registry.get('selectedTower');
 
     this.goldText.setText(gold);
     this.livesText.setText(lives);
     this.waveText.setText(`${wave}/${total}`);
     this.livesText.setColor(lives <= 5 ? '#e74c3c' : '#ecf0f1');
     this.levelNameText.setText(`${levelName}  ·  ${levelSub}`);
-
-    // Countdown bar
-    this.countdownBar.clear();
-    if (!waveActive && wave < total) {
-      const maxCD = wave === 0 ? 6000 : 22000;
-      this.countdownBar.fillStyle(0x2d6a9f, 1);
-      this.countdownBar.fillRect(this.PX + 8, 100, (this.PW - 16) * Math.min(1, countdown / maxCD), 12);
-      this.countdownText.setText(`Next wave in ${Math.ceil(countdown / 1000)}s`);
-    } else {
-      this.countdownText.setText(waveActive ? 'Wave active!' : '');
-    }
 
     // Active buffs
     this._drawBuffStrip(buffs);

@@ -319,7 +319,6 @@ class GameScene extends Phaser.Scene {
     // ── Wave countdown ───────────────────────────────────────────────────────
     if (!this.waveActive) {
       this.waveCountdown -= delta;
-      this.registry.set('waveCountdown', Math.max(0, this.waveCountdown));
       if (this.waveCountdown <= 0) {
         if (this.wave < this.levelDef.waves.length) this._startWave();
         else this._onLevelComplete();
@@ -367,8 +366,7 @@ class GameScene extends Phaser.Scene {
       if (this.wave >= this.levelDef.waves.length) {
         this._onLevelComplete();
       } else {
-        this.waveCountdown = 22000;
-        this.registry.set('waveCountdown', this.waveCountdown);
+        this.waveCountdown = 5000;
       }
     }
 
