@@ -63,11 +63,11 @@ const TOWER_DEFS = {
   },
   frost: {
     name: 'Frost', cost: 75, color: 0x3498db, projColor: 0x74b9ff,
-    fireRate: 1000, projSpeed: 280, slow: 0.4, slowDuration: 2500,
+    fireRate: 1000, projSpeed: 280, slow: 0.32, slowDuration: 2000,
     upgrades: [
-      { damage: 8,  range: 3.0, cost: 0,   slow: 0.4 },
-      { damage: 15, range: 3.5, cost: 75,  slow: 0.3 },
-      { damage: 25, range: 4.0, cost: 125, slow: 0.2 },
+      { damage: 6,  range: 3.0, cost: 0,   slow: 0.32 },
+      { damage: 12, range: 3.5, cost: 75,  slow: 0.24 },
+      { damage: 20, range: 4.0, cost: 125, slow: 0.16 },
     ]
   },
   tesla: {
