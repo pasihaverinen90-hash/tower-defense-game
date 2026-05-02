@@ -301,12 +301,16 @@ class GameScene extends Phaser.Scene {
       this.scene.launch('UIScene');
       this.registry.set('gameWon', true);
     } else {
-      this.scene.launch('BuffScene', {
+      // Stop GameScene BEFORE launching BuffScene so BuffScene starts into a
+      // clean scene state — prior input-routing bugs traced to BuffScene
+      // launching while GameScene shutdown was still mid-flight.
+      const data = {
         livesLeft:  this.lives,
         levelIndex: this.levelIndex,
         buffs:      this.buffs,
-      });
+      };
       this.scene.stop('GameScene');
+      this.scene.launch('BuffScene', data);
     }
   }
 

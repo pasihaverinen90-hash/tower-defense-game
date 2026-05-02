@@ -19,6 +19,9 @@ class BuffScene extends Phaser.Scene {
   }
 
   create() {
+    // Defensive: clear any pointer listeners carried over from a prior run
+    // before re-registering. Prior bugs traced to listener stacking here.
+    this.input.removeAllListeners();
     this.input.enabled = true;
     this.input.setDefaultCursor('default');
     this._hitZones = [];

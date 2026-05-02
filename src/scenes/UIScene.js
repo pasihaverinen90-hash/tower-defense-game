@@ -23,7 +23,15 @@ class UIScene extends Phaser.Scene {
     this._createSkipButton();
     this._createOverlays();
 
-    this.registry.events.on('changedata', () => this._updateHUD(), this);
+    const onChange = () => this._updateHUD();
+    this.registry.events.on('changedata', onChange);
+    // Game-level emitter: scene shutdown does not auto-clean it. Without this,
+    // listeners from prior UIScene instances stack up and fire on destroyed
+    // graphics, which has caused stale-overlay rendering after restart.
+    this.events.once('shutdown', () => {
+      this.registry.events.off('changedata', onChange);
+    });
+
     this._updateHUD();
   }
 
@@ -257,7 +265,11 @@ class UIScene extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     btn.on('pointerover',  () => btn.setStyle({ backgroundColor: '#2ecc71' }));
     btn.on('pointerout',   () => btn.setStyle({ backgroundColor: '#27ae60' }));
-    btn.on('pointerdown',  () => { this.scene.stop('GameScene'); this.scene.start('MenuScene'); });
+    btn.on('pointerdown',  () => {
+      this.scene.stop('GameScene');
+      this.scene.stop('UIScene');
+      this.scene.start('MenuScene');
+    });
     container.add([dim, titleTxt, subTxt, btn]);
     return container;
   }
@@ -285,8 +297,8 @@ class UIScene extends Phaser.Scene {
     this._drawBuffStrip(buffs);
     this._updateTowerInfo(selTower, gold);
 
-    if (gameOver) this.gameOverOverlay.setVisible(true);
-    if (gameWon)  this.gameWonOverlay.setVisible(true);
+    this.gameOverOverlay.setVisible(!!gameOver);
+    this.gameWonOverlay.setVisible(!!gameWon);
   }
 
   // ─── Buff strip ─────────────────────────────────────────────────────────────
