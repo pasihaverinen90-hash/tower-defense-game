@@ -19,33 +19,8 @@ class BuffScene extends Phaser.Scene {
   }
 
   create() {
-    // Defensive: clear any pointer listeners carried over from a prior run
-    // before re-registering. Prior bugs traced to listener stacking here.
-    this.input.removeAllListeners();
     this.input.enabled = true;
     this.input.setDefaultCursor('default');
-    this._hitZones = [];
-    this._contBW = 300; this._contBH = 56;
-    this.input.on('pointerdown', (pointer) => {
-      const x = pointer.x, y = pointer.y;
-      for (const zone of this._hitZones) {
-        if (x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h) {
-          zone.cb();
-          break;
-        }
-      }
-    });
-    this.input.on('pointermove', (pointer) => {
-      if (!this.contBg) return;
-      const cx2 = CANVAS_WIDTH / 2, H2 = CANVAS_HEIGHT;
-      const bx = cx2 - this._contBW / 2, by = H2 - 68 - this._contBH / 2;
-      const over = pointer.x >= bx && pointer.x <= bx + this._contBW &&
-                   pointer.y >= by && pointer.y <= by + this._contBH;
-      if (this.pointsLeft === 0) {
-        this.contBg.clear();
-        this._fillContBtn(over ? 0x2980b9 : 0x1e6fa5);
-      }
-    });
     const W = CANVAS_WIDTH, H = CANVAS_HEIGHT, cx = W / 2;
 
     // ── Dark overlay background ────────────────────────────────────────────
@@ -155,10 +130,13 @@ class BuffScene extends Phaser.Scene {
       fontSize: '22px', fontFamily: 'Arial Black', color: '#ffffff'
     }).setOrigin(0.5);
 
-    this._hitZones.push({
-      x: cx - contBW / 2, y: H - 68 - contBH / 2, w: contBW, h: contBH,
-      cb: () => { if (this.pointsLeft === 0) this._continue(); }
-    });
+    const contX = cx - contBW / 2, contY = H - 68 - contBH / 2;
+    this.add.zone(contX, contY, contBW, contBH)
+      .setOrigin(0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => { if (this.pointsLeft === 0) this._continue(); })
+      .on('pointerover',  () => { if (this.pointsLeft === 0) { this.contBg.clear(); this._fillContBtn(0x2980b9); } })
+      .on('pointerout',   () => { if (this.pointsLeft === 0) { this.contBg.clear(); this._fillContBtn(0x1e6fa5); } });
 
     // ── Note at bottom ─────────────────────────────────────────────────────
     this.add.text(cx, H - 22,
@@ -197,11 +175,17 @@ class BuffScene extends Phaser.Scene {
 
     // – button
     const minusBg = this.add.graphics();
-    this._hitZones.push({ x: cx - W / 2 + 8, y: cy + H / 2 - 44, w: 44, h: 36, cb: () => this._adjustBuff(def.key, -1) });
+    this.add.zone(cx - W / 2 + 8, cy + H / 2 - 44, 44, 36)
+      .setOrigin(0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this._adjustBuff(def.key, -1));
 
     // + button
     const plusBg = this.add.graphics();
-    this._hitZones.push({ x: cx + W / 2 - 52, y: cy + H / 2 - 44, w: 44, h: 36, cb: () => this._adjustBuff(def.key, +1) });
+    this.add.zone(cx + W / 2 - 52, cy + H / 2 - 44, 44, 36)
+      .setOrigin(0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this._adjustBuff(def.key, +1));
 
     this.cardObjects[def.key] = {
       bg, dotContainer,
