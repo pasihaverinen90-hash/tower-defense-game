@@ -355,7 +355,7 @@ class UIScene extends Phaser.Scene {
     };
 
     T(PX + 32, TOP,      `${def.name}  Lv${data.level + 1}`,                     { fontSize: '14px', fontFamily: 'Arial Black', color: '#ecf0f1' });
-    T(PX + 14, TOP + 22, `⚔  ${data.damage} dmg`,                                { fontSize: '12px', fontFamily: 'Arial', color: '#dfe6e9' });
+    T(PX + 14, TOP + 22, `⚔  ${data.damage} ${data.type === 'frost' ? 'dps' : 'dmg'}`, { fontSize: '12px', fontFamily: 'Arial', color: '#dfe6e9' });
     T(PX + 14, TOP + 38, `🎯 ${(data.range / TILE_SIZE).toFixed(1)} tile range`,  { fontSize: '12px', fontFamily: 'Arial', color: '#dfe6e9' });
 
     // ── Targeting priority buttons ─────────────────────────────────────────

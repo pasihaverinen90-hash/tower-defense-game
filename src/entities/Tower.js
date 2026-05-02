@@ -62,19 +62,24 @@ class Tower {
   getSellValue()   { return Math.floor(this.totalInvested * 0.6); }
 
   // ─── Frost aura: called every frame by GameScene ────────────────────────────
-  // Applies slow to every enemy within range. No projectile. No cooldown.
+  // Applies slow + damage-over-time to every enemy within range. No projectile.
   // slowDuration is kept short (500ms) so enemies stop being slowed quickly
   // once they step out of the aura field.
+  // this.damage is interpreted as DAMAGE PER SECOND for frost; multiplied by
+  // delta/1000 to be frame-rate independent. Lethal damage flips e.alive=false
+  // and the next-frame GameScene cleanup loop awards gold like any other kill.
   updateAura(enemies, delta) {
     // Advance the pulse animation
     this.auraPulse = (this.auraPulse + delta * 0.003) % (Math.PI * 2);
 
-    // Slow every enemy in range
+    const tickDamage = this.damage * (delta / 1000);
+
     for (const e of enemies) {
       if (!e.alive || e.reached) continue;
       if (Math.hypot(e.x - this.x, e.y - this.y) <= this.range) {
         // Refresh the slow so it stays active while inside the aura
         e.applySlowEffect(this.slow, 500);
+        e.takeDamage(tickDamage);
       }
     }
 

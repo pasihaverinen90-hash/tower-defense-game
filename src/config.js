@@ -67,12 +67,13 @@ const TOWER_DEFS = {
     ]
   },
   frost: {
+    // damage is DAMAGE PER SECOND — applied continuously by Tower.updateAura
     name: 'Frost', cost: 75, color: 0x3498db, projColor: 0x74b9ff,
     fireRate: 1000, projSpeed: 280, slow: 0.32, slowDuration: 2000,
     upgrades: [
-      { damage: 6,  range: 3.0, cost: 0,   slow: 0.32 },
-      { damage: 12, range: 3.5, cost: 75,  slow: 0.24 },
-      { damage: 20, range: 4.0, cost: 125, slow: 0.16 },
+      { damage: 2, range: 3.0, cost: 0,   slow: 0.32 },
+      { damage: 4, range: 3.5, cost: 75,  slow: 0.24 },
+      { damage: 7, range: 4.0, cost: 125, slow: 0.16 },
     ]
   },
   tesla: {
