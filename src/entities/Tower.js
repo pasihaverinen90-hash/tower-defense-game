@@ -61,15 +61,6 @@ class Tower {
   getUpgradeCost() { return this.canUpgrade() ? this.def.upgrades[this.level + 1].cost : null; }
   getSellValue()   { return Math.floor(this.totalInvested * 0.6); }
 
-  upgrade() {
-    if (!this.canUpgrade()) return false;
-    this.level++;
-    this.totalInvested += this.def.upgrades[this.level].cost;
-    this.applyUpgrade();
-    this.render();
-    return true;
-  }
-
   // ─── Frost aura: called every frame by GameScene ────────────────────────────
   // Applies slow to every enemy within range. No projectile. No cooldown.
   // slowDuration is kept short (500ms) so enemies stop being slowed quickly
@@ -159,17 +150,15 @@ class Tower {
     this.lastFireTime = now;
 
     const isCrit = Math.random() < (this.critChance || 0);
-    const damage = isCrit ? this.damage * 2 : this.damage;
+    const damage = isCrit ? this.damage * CRIT_MULTIPLIER : this.damage;
 
     return {
       type: this.type, x: this.x, y: this.y, target,
       damage, isCrit,
-      speed:        this.def.projSpeed,
-      color:        isCrit ? 0xffffff : this.def.projColor,
-      splash:       this.splashRadius,
-      slow:         0,           // frost no longer fires projectiles
-      slowDuration: 0,
-      chain:        this.chain,
+      speed:  this.def.projSpeed,
+      color:  isCrit ? 0xffffff : this.def.projColor,
+      splash: this.splashRadius,
+      chain:  this.chain,
     };
   }
 

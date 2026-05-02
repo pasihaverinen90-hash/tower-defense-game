@@ -24,6 +24,7 @@ class GameScene extends Phaser.Scene {
     this.lives     = this.levelDef.startLives;
     this.wave      = 0;
     this.waveActive    = false;
+    this.paused        = false;
     this.gameOver      = false;
     this.levelComplete = false;
     this.gameWon       = false;
@@ -194,10 +195,14 @@ class GameScene extends Phaser.Scene {
     const clicked = this.towers.find(t => t.tileX === tileX && t.tileY === tileY);
     if (clicked) { this.selectTower(clicked); return; }
 
-    if (this.selectedTowerType &&
-        !this.pathTiles.has(`${tileX},${tileY}`) &&
-        !this.towers.find(t => t.tileX === tileX && t.tileY === tileY)) {
-      this._placeTower(tileX, tileY, this.selectedTowerType);
+    if (this.selectedTowerType) {
+      const px = tileX * TILE_SIZE + TILE_SIZE / 2;
+      const py = tileY * TILE_SIZE + TILE_SIZE / 2;
+      if (this.pathTiles.has(`${tileX},${tileY}`)) {
+        this._showFloatingText(px, py, 'Cannot place on path', '#e74c3c');
+      } else {
+        this._placeTower(tileX, tileY, this.selectedTowerType);
+      }
     } else {
       this.selectTower(null);
     }
@@ -205,10 +210,30 @@ class GameScene extends Phaser.Scene {
 
   _placeTower(tileX, tileY, type) {
     const cost = TOWER_DEFS[type].cost;
-    if (this.gold < cost) return;
+    const px   = tileX * TILE_SIZE + TILE_SIZE / 2;
+    const py   = tileY * TILE_SIZE + TILE_SIZE / 2;
+    if (this.gold < cost) {
+      this._showFloatingText(px, py, 'Not enough gold', '#e74c3c');
+      return;
+    }
     this.gold -= cost;
     this.towers.push(new Tower(this, tileX, tileY, type));
     this._syncGold();
+  }
+
+  _showFloatingText(x, y, text, color) {
+    const t = this.add.text(x, y, text, {
+      fontSize: '14px', fontFamily: 'Arial Black', color,
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(20);
+    this.tweens.add({
+      targets: t,
+      y: y - 28,
+      alpha: 0,
+      duration: 900,
+      ease: 'Cubic.easeOut',
+      onComplete: () => t.destroy(),
+    });
   }
 
   selectTower(tower) {
@@ -313,9 +338,14 @@ class GameScene extends Phaser.Scene {
     if (!this.waveActive) this.waveCountdown = 0;
   }
 
+  togglePause() {
+    this.paused = !this.paused;
+  }
+
   // ─── Update loop ───────────────────────────────────────────────────────────
   update(time, delta) {
     if (this.gameOver || this.levelComplete) return;
+    if (this.paused) return;
 
     // ── Wave countdown ───────────────────────────────────────────────────────
     if (!this.waveActive) {

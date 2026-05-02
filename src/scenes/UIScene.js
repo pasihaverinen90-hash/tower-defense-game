@@ -13,6 +13,10 @@ class UIScene extends Phaser.Scene {
 
     this.infoGfx   = this.add.graphics();
     this.infoTexts = [];
+    this._sellArmedTower = null;
+    this._sellArmedTimer = null;
+    this._lastWaveActive = undefined;
+    this._lastPaused     = undefined;
 
     this._createStaticUI();
     this._createTowerShop();
@@ -41,6 +45,16 @@ class UIScene extends Phaser.Scene {
       this.countdownText.setText(`Next wave in ${Math.ceil(countdown / 1000)}s`);
     } else {
       this.countdownText.setText(waveActive ? 'Wave active!' : '');
+    }
+
+    // Refresh skip/pause buttons (cheap — only redraws if state changed)
+    if (this._lastWaveActive !== waveActive) {
+      this._lastWaveActive = waveActive;
+      this._drawSkipBtn();
+    }
+    if (this._lastPaused !== gs.paused) {
+      this._lastPaused = gs.paused;
+      this._drawPauseBtn(!!gs.paused);
     }
   }
 
@@ -151,20 +165,68 @@ class UIScene extends Phaser.Scene {
     }
   }
 
-  // ─── Skip button ───────────────────────────────────────────────────────────
+  // ─── Skip + Pause buttons (bottom row, side-by-side) ───────────────────────
   _createSkipButton() {
     const PX = this.PX, PW = this.PW;
-    const bx = PX + 8, by = CANVAS_HEIGHT - 54, bw = PW - 16, bh = 40;
-    const bg = this.add.graphics();
-    bg.fillStyle(0x1a2940, 1);
-    bg.fillRoundedRect(bx, by, bw, bh, 7);
-    bg.lineStyle(1.5, 0x2d3561, 1);
-    bg.strokeRoundedRect(bx, by, bw, bh, 7);
-    this.add.text(this.PX + this.PW / 2, by + 20, '⏭  Skip Wave', {
+    const by = CANVAS_HEIGHT - 54, bh = 40;
+    const pauseBW = 56;
+    const skipBX  = PX + 8;
+    const skipBW  = PW - 16 - pauseBW - 6;
+    const pauseBX = skipBX + skipBW + 6;
+
+    // Skip / Start Wave button
+    this.skipBg = this.add.graphics();
+    this.skipText = this.add.text(skipBX + skipBW / 2, by + 20, '', {
       fontSize: '14px', fontFamily: 'Arial Black', color: '#74b9ff'
     }).setOrigin(0.5);
-    const zone = this.add.zone(bx, by, bw, bh).setOrigin(0).setInteractive({ useHandCursor: true });
-    zone.on('pointerdown', () => { const gs = this.scene.get('GameScene'); if (gs) gs.skipToNextWave(); });
+    this._skipBtnBounds = { x: skipBX, y: by, w: skipBW, h: bh };
+    this._drawSkipBtn();
+    const skipZone = this.add.zone(skipBX, by, skipBW, bh).setOrigin(0).setInteractive({ useHandCursor: true });
+    skipZone.on('pointerdown', () => {
+      const gs = this.scene.get('GameScene');
+      if (gs && !gs.waveActive) gs.skipToNextWave();
+    });
+
+    // Pause / Resume button
+    this.pauseBg = this.add.graphics();
+    this.pauseText = this.add.text(pauseBX + pauseBW / 2, by + 20, '⏸', {
+      fontSize: '20px', fontFamily: 'Arial Black', color: '#f1c40f'
+    }).setOrigin(0.5);
+    this._pauseBtnBounds = { x: pauseBX, y: by, w: pauseBW, h: bh };
+    this._drawPauseBtn(false);
+    const pauseZone = this.add.zone(pauseBX, by, pauseBW, bh).setOrigin(0).setInteractive({ useHandCursor: true });
+    pauseZone.on('pointerdown', () => {
+      const gs = this.scene.get('GameScene');
+      if (gs) gs.togglePause();
+    });
+  }
+
+  _drawSkipBtn() {
+    const gs = this.scene.get('GameScene');
+    const waveActive = gs ? gs.waveActive : false;
+    const { x, y, w, h } = this._skipBtnBounds;
+    this.skipBg.clear();
+    this.skipBg.fillStyle(waveActive ? 0x141e2b : 0x1a2940, 1);
+    this.skipBg.fillRoundedRect(x, y, w, h, 7);
+    this.skipBg.lineStyle(1.5, waveActive ? 0x2d3561 : 0x3498db, waveActive ? 0.5 : 1);
+    this.skipBg.strokeRoundedRect(x, y, w, h, 7);
+    if (waveActive) {
+      this.skipText.setText('Wave in progress');
+      this.skipText.setColor('#4a5568');
+    } else {
+      this.skipText.setText('▶  Start Wave Now');
+      this.skipText.setColor('#74b9ff');
+    }
+  }
+
+  _drawPauseBtn(paused) {
+    const { x, y, w, h } = this._pauseBtnBounds;
+    this.pauseBg.clear();
+    this.pauseBg.fillStyle(paused ? 0x6c5300 : 0x1a2940, 1);
+    this.pauseBg.fillRoundedRect(x, y, w, h, 7);
+    this.pauseBg.lineStyle(1.5, paused ? 0xf1c40f : 0x2d3561, 1);
+    this.pauseBg.strokeRoundedRect(x, y, w, h, 7);
+    this.pauseText.setText(paused ? '▶' : '⏸');
   }
 
   // ─── Game Over / Victory overlays only (level complete now handled by BuffScene) ──
@@ -358,15 +420,44 @@ class UIScene extends Phaser.Scene {
       T(PX + 14, BY1 + 8, '✅ Max Level', { fontSize: '12px', fontFamily: 'Arial Black', color: '#2ecc71' });
     }
 
-    // ── Sell button ────────────────────────────────────────────────────────
+    // ── Sell button (two-click confirm) ────────────────────────────────────
     const BY2 = BY1 + BH + 8;
-    this.infoGfx.fillStyle(0x922b21, 1);
+    const gs  = this.scene.get('GameScene');
+    if (this._sellArmedTower && gs?.selectedTower !== this._sellArmedTower) {
+      this._clearSellArm();
+    }
+    const armed = !!this._sellArmedTower && gs?.selectedTower === this._sellArmedTower;
+
+    this.infoGfx.fillStyle(armed ? 0xe67e22 : 0x922b21, 1);
     this.infoGfx.fillRoundedRect(BX, BY2, BW, BH, 6);
-    T(PX + PW / 2, BY2 + 17, `💰 Sell  +${data.sellValue}g`, {
-      fontSize: '13px', fontFamily: 'Arial Black', color: '#f5b7b1'
+    T(PX + PW / 2, BY2 + 17, armed ? '⚠  Click again to confirm' : `💰 Sell  +${data.sellValue}g`, {
+      fontSize: '13px', fontFamily: 'Arial Black', color: armed ? '#ffffff' : '#f5b7b1'
     }).setOrigin(0.5);
     const sz = this.add.zone(BX, BY2, BW, BH).setOrigin(0).setInteractive({ useHandCursor: true });
-    sz.on('pointerdown', () => { const gs = this.scene.get('GameScene'); if (gs?.selectedTower) gs.sellTower(gs.selectedTower); });
+    sz.on('pointerdown', () => this._onSellClick());
     this.infoTexts.push(sz);
+  }
+
+  _onSellClick() {
+    const gs = this.scene.get('GameScene');
+    if (!gs?.selectedTower) return;
+    if (this._sellArmedTower === gs.selectedTower) {
+      this._clearSellArm();
+      gs.sellTower(gs.selectedTower);
+    } else {
+      this._sellArmedTower = gs.selectedTower;
+      if (this._sellArmedTimer) this._sellArmedTimer.remove(false);
+      this._sellArmedTimer = this.time.delayedCall(3000, () => {
+        this._sellArmedTower = null;
+        this._sellArmedTimer = null;
+        this._updateHUD();
+      });
+      this._updateHUD();
+    }
+  }
+
+  _clearSellArm() {
+    this._sellArmedTower = null;
+    if (this._sellArmedTimer) { this._sellArmedTimer.remove(false); this._sellArmedTimer = null; }
   }
 }

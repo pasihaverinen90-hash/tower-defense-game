@@ -9,8 +9,6 @@ class Projectile {
     this.speed        = data.speed;
     this.color        = data.color;
     this.splash       = data.splash       || 0;
-    this.slow         = data.slow         || 0;
-    this.slowDuration = data.slowDuration || 0;
     this.chain        = data.chain        || 0;
     this.active       = true;
   }
@@ -60,7 +58,7 @@ class Projectile {
 
       for (let i = 1; i < this.chain; i++) {
         let nearest = null;
-        let nearestDist = TILE_SIZE * 3.5;
+        let nearestDist = TILE_SIZE * CHAIN_RANGE_TILES;
         for (const e of enemies) {
           if (!e.alive || e.reached || hit.has(e)) continue;
           const d = Math.hypot(e.x - last.x, e.y - last.y);
@@ -68,7 +66,7 @@ class Projectile {
         }
         if (!nearest) break;
         hit.add(nearest);
-        nearest.takeDamage(Math.floor(this.damage * 0.75));  // 75% damage per chain
+        nearest.takeDamage(Math.floor(this.damage * CHAIN_DAMAGE_FALLOFF));
         this.scene.addEffect({ type: 'chain', x1: last.x, y1: last.y, x2: nearest.x, y2: nearest.y, timer: 180 });
         last = nearest;
       }
@@ -76,11 +74,6 @@ class Projectile {
     } else {
       // ── Single target ───────────────────────────────────────────────────
       this.target.takeDamage(this.damage);
-    }
-
-    // Apply slow (Frost tower)
-    if (this.slow > 0 && this.target.alive) {
-      this.target.applySlowEffect(this.slow, this.slowDuration);
     }
   }
 

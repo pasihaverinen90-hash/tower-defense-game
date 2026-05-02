@@ -17,6 +17,11 @@ const BUFF_EFFECTS = {
   crit:   0.08,  // +8% crit chance per point
 };
 
+// ─── Combat tunables ─────────────────────────────────────────────────────────
+const CRIT_MULTIPLIER   = 2;     // critical hits deal Nx damage
+const CHAIN_RANGE_TILES = 3.5;   // Tesla chain max jump distance (tiles)
+const CHAIN_DAMAGE_FALLOFF = 0.75; // each chain hop deals N% of original damage
+
 // ─── Path builders ────────────────────────────────────────────────────────────
 // Builds a Set of "col,row" strings for a single waypoint array
 function buildPathTiles(waypoints) {
